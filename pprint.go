@@ -25,6 +25,9 @@ func Max(a, b int) int {
 
 // 递归计算struct里内嵌的struct深度， 返回最深深度
 func depthOfStruct(dep int, val reflect.Value) int {
+	if !val.IsValid() {
+		return dep
+	}
 	max := dep
 	for i := 0; i < val.NumField(); i++ {
 		v := val.Field(i)
@@ -71,14 +74,17 @@ func w(v reflect.Value, dep int) {
 		buf.WriteString("%f")
 		push(v)
 	case reflect.Struct:
+		fill(dep)
+		buf.WriteString("%s\n")
+		push(v.Type().String())
 		for i := 0; i < v.NumField(); i++ {
+			fill(depth - dep)
 			if i == 0 {
-				buf.WriteString("--\t%s\t")
+				buf.WriteString("%s\t--\t%s\t")
 			} else {
-				fill(depth - dep)
 				buf.WriteString("%s\t|--\t%s\t")
-				push("")
 			}
+			push("")
 			push(v.Type().Field(i).Name)
 			w(v.Field(i), dep-1)
 		}
@@ -94,6 +100,7 @@ func w(v reflect.Value, dep int) {
 func Format(v interface{}) {
 	buf.Reset()
 	ind := reflect.Indirect(reflect.ValueOf(v))
+	fmt.Printf("(%s)\n", ind.Type().String())
 	tw := tabwriter.NewWriter(os.Stdout, 0, 2, 2, ' ', 0)
 	dep := depthOfStruct(0, ind)
 	depth = dep
